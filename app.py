@@ -108,7 +108,7 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 @app.route("/api/predict", methods=["POST"])
-def api_predict():
+def predict():
     _cleanup_old_uploads()
     crop = request.form.get("crop", "")
     part = request.form.get("part", "")
@@ -128,6 +128,7 @@ def api_predict():
         return jsonify({"error": f"Internal server error: {str(exc)}"}), 500
 
     return jsonify(result)
+
 
 
 
