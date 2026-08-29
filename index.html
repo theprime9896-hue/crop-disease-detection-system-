@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fasal Rakshak - AI Crop Disease Diagnostics</title>
+  <meta name="description" content="AI-assisted crop disease detection, plant tissue analysis, and automated treatment recommendation engine.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Header Navigation Bar -->
+    <header class="app-header">
+      <div class="brand-logo">
+        <div class="brand-icon">🌿</div>
+        <div>
+          <h1 class="brand-title">Fasal Rakshak AI</h1>
+          <p class="brand-subtitle">Plant Pathology & Diagnostics System</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid Workspace -->
+    <main class="main-grid">
+
+      <!-- Left Panel: Form & Image Input -->
+      <section class="card-panel">
+        <h2 class="card-heading"><span>🌱</span> Select Target Specimen</h2>
+        <p class="card-description">Choose the crop species and upload a high-resolution leaf or root photo for pathology scanning.</p>
+
+        <div id="toast-error" class="toast-error"></div>
+
+        {% if error %}
+          <div class="toast-error" style="display: block;">{{ error }}</div>
+        {% endif %}
+
+        <form id="analysis-form" action="{{ url_for('predict') }}" method="post" enctype="multipart/form-data">
+          
+          <!-- Hidden inputs for JS state -->
+          <input type="hidden" name="crop" id="selected-crop" value="rice">
+          <input type="hidden" name="part" id="selected-part" value="leaf">
+
+          <!-- Crop Selection Grid -->
+          <span class="selector-label">1. Crop Type</span>
+          <div class="crop-grid">
+            <div class="crop-chip active" data-crop="rice">
+              <span class="crop-icon">🌾</span>
+              <span class="crop-name">Rice</span>
+            </div>
+            <div class="crop-chip" data-crop="wheat">
+              <span class="crop-icon">🌾</span>
+              <span class="crop-name">Wheat</span>
+            </div>
+            <div class="crop-chip" data-crop="maize">
+              <span class="crop-icon">🌽</span>
+              <span class="crop-name">Maize</span>
+            </div>
+            <div class="crop-chip" data-crop="tomato">
+              <span class="crop-icon">🍅</span>
+              <span class="crop-name">Tomato</span>
+            </div>
+            <div class="crop-chip" data-crop="potato">
+              <span class="crop-icon">🥔</span>
+              <span class="crop-name">Potato</span>
+            </div>
+            <div class="crop-chip" data-crop="cotton">
+              <span class="crop-icon">☁️</span>
+              <span class="crop-name">Cotton</span>
+            </div>
+            <div class="crop-chip" data-crop="sugarcane">
+              <span class="crop-icon">🎋</span>
+              <span class="crop-name">Sugarcane</span>
+            </div>
+            <div class="crop-chip" data-crop="chili">
+              <span class="crop-icon">🌶️</span>
+              <span class="crop-name">Chili</span>
+            </div>
+          </div>
+
+          <!-- Plant Part Selector -->
+          <span class="selector-label">2. Plant Anatomy</span>
+          <div class="part-toggle-container">
+            <button type="button" class="part-btn active" data-part="leaf">
+              <span>🍃</span> Leaf Tissue
+            </button>
+            <button type="button" class="part-btn" data-part="root">
+              <span>🪵</span> Root System
+            </button>
+          </div>
+
+          <!-- Image Dropzone -->
+          <span class="selector-label">3. Specimen Photo</span>
+          <div id="dropzone" class="dropzone">
+            <div class="dropzone-icon">📷</div>
+            <div class="dropzone-text">Drag & drop specimen photo here</div>
+            <div class="dropzone-subtext">Supports PNG, JPG, JPEG (Max 8MB)</div>
+            <input type="file" name="image" id="file-input" class="file-input" accept=".png,.jpg,.jpeg">
+          </div>
+
+          <!-- Image Preview -->
+          <div id="preview-container" class="preview-container">
+            <div id="scanning-bar" class="scanning-bar"></div>
+            <img id="preview-img" class="preview-img" src="" alt="Specimen Preview">
+            <button type="button" id="remove-preview" class="preview-remove-btn" title="Remove photo">✕</button>
+          </div>
+
+          <!-- Submit Action Button -->
+          <button type="submit" id="btn-analyze" class="btn-analyze">
+            <span>🔍</span> Run AI Diagnosis
+          </button>
+        </form>
+
+        <!-- Quick Sample Preset Bar -->
+        <div class="sample-presets">
+          <div class="preset-title">
+            <span>⚡</span> Quick Sample Presets (No file needed):
+          </div>
+          <div class="preset-buttons">
+            <button type="button" class="btn-preset" data-crop="rice" data-part="leaf" data-condition="diseased">🌾 Rice Blast (Leaf)</button>
+            <button type="button" class="btn-preset" data-crop="tomato" data-part="leaf" data-condition="diseased">🍅 Tomato Blight</button>
+            <button type="button" class="btn-preset" data-crop="potato" data-part="root" data-condition="diseased">🥔 Potato Rot (Root)</button>
+            <button type="button" class="btn-preset" data-crop="wheat" data-part="leaf" data-condition="healthy">🌾 Healthy Wheat</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Panel: Diagnostic Results Dashboard -->
+      <section class="card-panel">
+        <h2 class="card-heading"><span>📊</span> Diagnostic Report</h2>
+        <p class="card-description">Computer Vision severity metrics, identified pathogen, and recommended agronomic interventions.</p>
+
+        <!-- Empty Placeholder -->
+        <div id="result-placeholder" class="result-placeholder">
+          <div class="placeholder-icon">🩺</div>
+          <h3>Awaiting Specimen Upload</h3>
+          <p>Select a crop species, upload an image or click a quick sample above to execute pathology analysis.</p>
+        </div>
+
+        <!-- Populated Results View -->
+        <div id="result-content" class="result-content">
+          
+          <!-- Risk Banner -->
+          <div id="status-banner" class="status-banner healthy">
+            <div class="status-info">
+              <div class="status-indicator"></div>
+              <div id="status-title" class="status-title">Healthy Plant Tissue</div>
+            </div>
+            <span id="severity-badge" class="badge-severity Healthy">Healthy</span>
+          </div>
+
+          <!-- Metrics Row -->
+          <div class="metrics-row">
+            <div class="metric-card">
+              <div class="metric-label">Specimen Analyzed</div>
+              <div id="res-crop" class="metric-val">Rice (Leaf)</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">AI Model Confidence</div>
+              <div id="res-confidence" class="metric-val">94%</div>
+            </div>
+          </div>
+
+          <!-- Lesion Percentage & Progress Bar -->
+          <div class="metric-card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="metric-label">Tissue Affected Area</span>
+              <span id="res-area" class="metric-val" style="font-size: 1.1rem;">12.4%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div id="area-progress-fill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+
+          <!-- Disease Details Box -->
+          <div class="pathology-box">
+            <div class="pathology-item">
+              <strong>Likely Disease / Condition</strong>
+              <span id="res-disease">Leaf Blast</span>
+            </div>
+            <div class="pathology-item" style="margin-top: 10px;">
+              <strong>Causal Agent / Etiology</strong>
+              <span id="res-cause">Fungus (Magnaporthe oryzae)</span>
+            </div>
+          </div>
+
+          <!-- Management Recommendations -->
+          <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--accent);">
+            Recommended Treatment Protocol
+          </h3>
+          <ul id="management-list" class="management-list">
+            <!-- Dynamically populated via JS -->
+          </ul>
+
+          <!-- Report Actions -->
+          <div class="report-actions">
+            <button type="button" id="btn-print" class="btn-secondary">
+              <span>📄</span> Export / Print Report
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Fasal Rakshak AI Diagnostic Tool &bull; Agriculture Computer Vision Project</p>
+    </footer>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

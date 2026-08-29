@@ -1,0 +1,17 @@
+# Python cache & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Temporary user uploads
+static/uploads/*
+!static/uploads/.gitkeep
+
+# IDE / OS junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
